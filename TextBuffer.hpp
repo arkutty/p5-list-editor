@@ -12,15 +12,15 @@
 #include <list>
 #include <string>
 // Uncomment the following line to use your List implementation
-// #include "List.hpp"
+#include "List.hpp"
 
 class TextBuffer {
   // Comment out the following two lines and uncomment the two below
   // to use your List implementation
-  using CharList = std::list<char>;
-  using Iterator = std::list<char>::iterator;
-  // using CharList = List<char>;
-  // using Iterator = List<char>::Iterator;
+  //using CharList = std::list<char>;
+  //using Iterator = std::list<char>::iterator;
+  using CharList = List<char>;
+  using Iterator = List<char>::Iterator;
 
 private:
   CharList data;           // linked list that contains the characters
@@ -54,7 +54,12 @@ private:
 public:
   //EFFECTS: Creates an empty text buffer. Its cursor is at the past-the-end
   //         position, with row 1, column 0, and index 0.
-  TextBuffer();
+  TextBuffer() : row(1), column(0), index(0){
+    CharList n_data;
+    this->data = n_data;
+    Iterator n_cursor;
+    this->cursor = n_cursor;
+  }
 
   //MODIFIES: *this
   //EFFECTS:  Moves the cursor one position forward and returns true,
@@ -62,7 +67,17 @@ public:
   //          in which case this does nothing and returns false.
   //NOTE:     Your implementation must update the row, column, and index
   //          if appropriate to maintain all invariants.
-  bool forward();
+  bool forward(){
+    if (cursor == data.end()){
+      ++row, index;
+      column = 0;
+      return false;
+    } else {
+      ++cursor;
+      ++column, index;
+      return true;
+    }
+  }
 
   //MODIFIES: *this
   //EFFECTS:  Moves the cursor one position backward and returns true,
@@ -73,16 +88,34 @@ public:
   //          beginning of a line to the end of the previous one.
   //NOTE:     Your implementation must update the row, column, and index
   //          if appropriate to maintain all invariants.
-  bool backward();
+  bool backward(){
+    if (cursor == data.begin()){
+      --row, index;
+      //length of column? - how to reset column
+      return false;
+    } else {
+      --cursor;
+      --column, index;
+      return true;
+    }
+  }
 
   //MODIFIES: *this
   //EFFECTS:  Inserts a character in the buffer before the cursor position.
   //          If the cursor is at the past-the-end position, this means the
   //          inserted character is the last character in the buffer.
   //          The cursor remains in the same place as before the insertion.
+  //figure out why this note is here if cursor is not updated
   //NOTE:     Your implementation must update the row, column, and index
   //          if appropriate to maintain all invariants.
-  void insert(char c);
+  void insert(char c){
+    if(cursor == data.begin()){
+      data.push_back(c);
+    } else {
+      data.insert(--cursor, c);
+      ++column, index;
+    }
+  }
 
   //MODIFIES: *this
   //EFFECTS:  Removes the character from the buffer that is at the cursor and
@@ -93,13 +126,34 @@ public:
   //          character was the last one in the buffer.
   //NOTE:     Your implementation must update the row, column, and index
   //          if appropriate to maintain all invariants.
-  bool remove();
+  bool remove(){
+    if(cursor == data.end()){
+      return false;
+    } else if (cursor == --data.end()){
+      cursor = data.end();
+      --index, column;
+      return true;
+    } else if (cursor == data.begin()){
+      --cursor;
+      --row, index;
+      //figure out column
+    } else {
+      data.erase(cursor);
+      --index, column;
+    }
+  }
 
   //MODIFIES: *this
   //EFFECTS:  Moves the cursor to the start of the current row (column 0).
   //NOTE:     Your implementation must update the row, column, and index
   //          if appropriate to maintain all invariants.
-  void move_to_row_start();
+  void move_to_row_start(){
+    while (*cursor != *"\n"){
+      --cursor;
+      --column, index;
+    }
+    ++cursor;
+  }
 
   //MODIFIES: *this
   //EFFECTS:  Moves the cursor to the end of the current row (the
@@ -107,7 +161,13 @@ public:
   //          position if the row is the last one in the buffer).
   //NOTE:     Your implementation must update the row, column, and index
   //          if appropriate to maintain all invariants.
-  void move_to_row_end();
+  void move_to_row_end(){
+    while (*cursor != *"\n"){
+      ++cursor;
+      ++column, index;
+    }
+    --cursor;
+  }
 
   //REQUIRES: new_column >= 0
   //MODIFIES: *this
@@ -153,18 +213,26 @@ public:
   char data_at_cursor() const;
 
   //EFFECTS:  Returns the row of the character at the current cursor.
-  int get_row() const;
+  int get_row() const{
+    return row;
+  }
 
   //EFFECTS:  Returns the column of the character at the current cursor.
-  int get_column() const;
+  int get_column() const{
+    return column;
+  }
 
   //EFFECTS:  Returns the index of the character at the current cursor
   //          with respect to the entire contents. If the cursor is at
   //          the past-the-end position, returns size() as the index.
-  int get_index() const;
+  int get_index() const{
+    return index;
+  }
 
   //EFFECTS:  Returns the number of characters in the buffer.
-  int size() const;
+  int size() const{
+    return data.size();
+  }
 
   //EFFECTS:  Returns the contents of the text buffer as a string.
   //HINT: Implement this using the string constructor that takes a
@@ -176,7 +244,7 @@ private:
   //EFFECTS: Computes the column of the cursor within the current row.
   //NOTE: This does not assume that the "column" member variable has
   //      a correct value (i.e. the row/column INVARIANT can be broken).
-  int compute_column() const;
+  int compute_column() const{}
 };
 
 #endif // TEXTBUFFER_HPP
