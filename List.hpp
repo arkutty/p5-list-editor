@@ -18,6 +18,8 @@ public:
 
   //EFFECTS:  returns true if the list is empty
   bool empty() const{
+    //if first is a nullptr returns true;
+    //!ptr returns true if it is a nullptr
     return (!first);
   }
 
@@ -25,6 +27,8 @@ public:
   //HINT:    Traversing a list is really slow. Instead, keep track of the size
   //         with a private member variable. That's how std::list does it.
   int size() const{
+    //size_of is updated when nodes are added or deleted
+    //or when list is copied/assigned in 
     return this->size_of;
   }
 
@@ -45,16 +49,18 @@ public:
   //EFFECTS:  inserts datum into the front of the list
   void push_front(const T &datum){
     //see if i can rewrite this without he if statement
-    if (empty()){
-      Node* new_node = new Node;
+    Node* new_node = new Node;
+    if (this->empty()){
       new_node->datum = datum;
-      first = new_node;
-      last = new_node;
+      new_node->next = nullptr;
+      new_node->prev = nullptr;
+      first = last = new_node;
     } else {
-      Node current_first = *first;
-      Node* new_node = new Node(nullptr, first, datum);
-      current_first->prev = new_node;
-      first = new_node;
+      new_node->datum = datum;
+      new_node->next = first;
+      new_node->prev = nullptr;
+      first->prev = new_node;
+      this->first = new_node;
     }
     ++size_of;
   }
@@ -78,11 +84,16 @@ public:
   //MODIFIES: invalidates all iterators to the removed element
   //EFFECTS:  removes the item at the front of the list
   void pop_front(){
-    //will deal with iterators later
     assert(!empty());
-    Node * second = first->next;
-    delete first;
-    first = second;
+    if(size_of == 1){
+      delete first;
+      first = last = nullptr;
+    } else {
+      Node * second = first->next;
+      delete first;
+      first = second;
+      first->prev = nullptr;
+    }
     --size_of;
   }
 
@@ -90,24 +101,30 @@ public:
   //MODIFIES: invalidates all iterators to the removed element
   //EFFECTS:  removes the item at the back of the list
   void pop_back(){
-    //will deal withbiterators later
     assert(!empty());
-    Node* second_to_last = last->prev;
-    delete last;
-    last = second_to_last;
+    if (size_of == 1){
+      delete last;
+      first = last = nullptr;
+    } else {
+      Node * second_to_last = last->prev;
+      delete last;
+      last = second_to_last;
+      last->next = nullptr;
+    }
     --size_of;
   }
 
   //MODIFIES: invalidates all iterators to the removed elements
   //EFFECTS:  removes all items from the list
   void clear(){
-    assert(!empty());
     Node* node_ptr = first;
     while (node_ptr){
       Node* temp = node_ptr->next;
       delete node_ptr;
       node_ptr = temp;
     }
+    first = nullptr;
+    last = nullptr;
     size_of = 0;
   }
 
@@ -119,12 +136,13 @@ public:
   List() : first(nullptr), last(nullptr){}
 
   //copy ctor
-  List(const List &other) : first(other.first), last(other.last), size_of(other->size()) {
-    copy_all(other);
+  List(const List &other) : first(nullptr), last(nullptr), size_of(0) {
+    this->copy_all(other);
   };
 
+  //assignment operator
   List & operator=(const List &other){
-    if (this != other){
+    if (this != &other){
       this->clear();
       this->copy_all(other);
     }
@@ -163,8 +181,7 @@ public:
 
     // Add a default constructor here. The default constructor must set both
     // pointer members to null pointers.
-    Iterator() : node_ptr(nullptr), list_ptr(nullptr) {}
-    
+    Iterator() : list_ptr(nullptr), node_ptr(nullptr) {}
 
     // Add custom implementations of the destructor, copy constructor, and
     // overloaded assignment operator, if appropriate. If these operations
@@ -191,17 +208,27 @@ public:
     //     violates the REQURES clause.
     // Note: comparing both the list and node pointers should be
     // sufficient to meet these requirements.
+
+    //prefix
     Iterator& operator++(){
       assert(node_ptr);
       node_ptr = node_ptr->next;
       return *this;
     }
 
-    bool operator!=(List<T>::Iterator right){
+    //postfix
+    Iterator operator++(int /*dummy*/){
+      assert(node_ptr);
+      Iterator copy = *this;
+      operator++();
+      return copy;
+    }
+
+    bool operator!=(const List<T>::Iterator right) const{
       return node_ptr != right.node_ptr;
     }
 
-    bool operator==(List<T>::Iterator right){
+    bool operator==(const List<T>::Iterator right) const{
       return node_ptr == right.node_ptr;
     }
 
@@ -285,21 +312,61 @@ public:
   //         Returns An iterator pointing to the element that followed the
   //         element erased by the function call
   Iterator erase(Iterator i){
-    Node* n_ptr = i.node_ptr;
-    Node* next_ptr = n_ptr->next;
-    Node* prior = n_ptr->prev;
-    Iterator(next_ptr, i.list_ptr);
-    delete i.node_ptr;
-    prior->next = next_ptr;
-    next_ptr->prev = prior;
-    return next_ptr;
+    assert(i.node_ptr);
+    Node * node_prev = i.node_ptr->prev;
+    Node * node_next = i.node_ptr->next;
+    if (node_prev){
+      node_prev->next = node_next;
+    } else {
+      first = node_next;
+    }
+    if (node_next){
+      node_next->prev = node_prev;
+    } else {
+      last = node_prev;
+    }
+    Node* victim = i.node_ptr;
+    Iterator* temp = &i;
+    ++(*temp);
+    delete victim;
+    --size_of;
+    return *temp;
   }
 
   //REQUIRES: i is a valid iterator associated with this list
   //EFFECTS: Inserts datum before the element at the specified position.
   //         Returns an iterator to the the newly inserted element.
   Iterator insert(Iterator i, const T &datum){
-    assert(false);
+    Node * current_node = i.node_ptr;
+    Node * new_node = new Node;
+    new_node->datum = datum;
+    new_node->next = nullptr;
+    new_node->prev = nullptr;
+
+    if (current_node){
+        Node * node_prev = current_node->prev;
+        new_node->next = current_node;
+        new_node->prev = node_prev;
+        current_node->prev = new_node;
+        if (node_prev){
+            node_prev->next = new_node;
+        } else {
+            first = new_node; 
+        }
+    } else {
+      //if this is becoming the new last node
+        new_node->prev = last;
+        if (last){
+            last->next = new_node;
+        } else {
+          //if the list is empty
+            first = new_node;
+        }
+        last = new_node;
+    }
+
+    ++size_of;
+    return Iterator(this, new_node);
   }
 
 };//List

@@ -54,12 +54,7 @@ private:
 public:
   //EFFECTS: Creates an empty text buffer. Its cursor is at the past-the-end
   //         position, with row 1, column 0, and index 0.
-  TextBuffer() : row(1), column(0), index(0){
-    CharList n_data;
-    this->data = n_data;
-    Iterator n_cursor;
-    this->cursor = n_cursor;
-  }
+  TextBuffer();
 
   //MODIFIES: *this
   //EFFECTS:  Moves the cursor one position forward and returns true,
@@ -67,17 +62,7 @@ public:
   //          in which case this does nothing and returns false.
   //NOTE:     Your implementation must update the row, column, and index
   //          if appropriate to maintain all invariants.
-  bool forward(){
-    if (cursor == data.end()){
-      ++row, index;
-      column = 0;
-      return false;
-    } else {
-      ++cursor;
-      ++column, index;
-      return true;
-    }
-  }
+  bool forward();
 
   //MODIFIES: *this
   //EFFECTS:  Moves the cursor one position backward and returns true,
@@ -88,17 +73,7 @@ public:
   //          beginning of a line to the end of the previous one.
   //NOTE:     Your implementation must update the row, column, and index
   //          if appropriate to maintain all invariants.
-  bool backward(){
-    if (cursor == data.begin()){
-      --row, index;
-      //length of column? - how to reset column
-      return false;
-    } else {
-      --cursor;
-      --column, index;
-      return true;
-    }
-  }
+  bool backward();
 
   //MODIFIES: *this
   //EFFECTS:  Inserts a character in the buffer before the cursor position.
@@ -108,14 +83,7 @@ public:
   //figure out why this note is here if cursor is not updated
   //NOTE:     Your implementation must update the row, column, and index
   //          if appropriate to maintain all invariants.
-  void insert(char c){
-    if(cursor == data.begin()){
-      data.push_back(c);
-    } else {
-      data.insert(--cursor, c);
-      ++column, index;
-    }
-  }
+  void insert(char c);
 
   //MODIFIES: *this
   //EFFECTS:  Removes the character from the buffer that is at the cursor and
@@ -126,34 +94,13 @@ public:
   //          character was the last one in the buffer.
   //NOTE:     Your implementation must update the row, column, and index
   //          if appropriate to maintain all invariants.
-  bool remove(){
-    if(cursor == data.end()){
-      return false;
-    } else if (cursor == --data.end()){
-      cursor = data.end();
-      --index, column;
-      return true;
-    } else if (cursor == data.begin()){
-      --cursor;
-      --row, index;
-      //figure out column
-    } else {
-      data.erase(cursor);
-      --index, column;
-    }
-  }
+  bool remove();
 
   //MODIFIES: *this
   //EFFECTS:  Moves the cursor to the start of the current row (column 0).
   //NOTE:     Your implementation must update the row, column, and index
   //          if appropriate to maintain all invariants.
-  void move_to_row_start(){
-    while (*cursor != *"\n"){
-      --cursor;
-      --column, index;
-    }
-    ++cursor;
-  }
+  void move_to_row_start();
 
   //MODIFIES: *this
   //EFFECTS:  Moves the cursor to the end of the current row (the
@@ -161,13 +108,7 @@ public:
   //          position if the row is the last one in the buffer).
   //NOTE:     Your implementation must update the row, column, and index
   //          if appropriate to maintain all invariants.
-  void move_to_row_end(){
-    while (*cursor != *"\n"){
-      ++cursor;
-      ++column, index;
-    }
-    --cursor;
-  }
+  void move_to_row_end();
 
   //REQUIRES: new_column >= 0
   //MODIFIES: *this
@@ -213,26 +154,18 @@ public:
   char data_at_cursor() const;
 
   //EFFECTS:  Returns the row of the character at the current cursor.
-  int get_row() const{
-    return row;
-  }
+  int get_row() const;
 
   //EFFECTS:  Returns the column of the character at the current cursor.
-  int get_column() const{
-    return column;
-  }
+  int get_column() const;
 
   //EFFECTS:  Returns the index of the character at the current cursor
   //          with respect to the entire contents. If the cursor is at
   //          the past-the-end position, returns size() as the index.
-  int get_index() const{
-    return index;
-  }
+  int get_index() const;
 
   //EFFECTS:  Returns the number of characters in the buffer.
-  int size() const{
-    return data.size();
-  }
+  int size() const;
 
   //EFFECTS:  Returns the contents of the text buffer as a string.
   //HINT: Implement this using the string constructor that takes a
@@ -244,7 +177,8 @@ private:
   //EFFECTS: Computes the column of the cursor within the current row.
   //NOTE: This does not assume that the "column" member variable has
   //      a correct value (i.e. the row/column INVARIANT can be broken).
-  int compute_column() const{}
+  int compute_column() const;
+
 };
 
 #endif // TEXTBUFFER_HPP
